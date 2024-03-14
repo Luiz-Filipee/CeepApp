@@ -9,7 +9,8 @@ import br.luizfilipe.ceepapp.ui.recyclerview.adapter.ListaNotasAdapter;
 
 public class NotaItemTouchHelperCallback extends ItemTouchHelper.Callback {
     private final ListaNotasAdapter adapter;
-    public NotaItemTouchHelperCallback(ListaNotasAdapter adapter){
+
+    public NotaItemTouchHelperCallback(ListaNotasAdapter adapter) {
         this.adapter = adapter;
     }
 
@@ -17,20 +18,33 @@ public class NotaItemTouchHelperCallback extends ItemTouchHelper.Callback {
     @Override
     public int getMovementFlags(@NonNull RecyclerView recyclerView, @NonNull RecyclerView.ViewHolder viewHolder) {
         int marcacoesDeDeslize = ItemTouchHelper.RIGHT | ItemTouchHelper.LEFT;
-        return makeMovementFlags(0, marcacoesDeDeslize);
+        int marcacoesDeArrastar = ItemTouchHelper.DOWN | ItemTouchHelper.UP | ItemTouchHelper.RIGHT | ItemTouchHelper.LEFT;
+        return makeMovementFlags(marcacoesDeArrastar, marcacoesDeDeslize);
     }
 
     // é uma chamada quando o elemento for arrastado
     @Override
     public boolean onMove(@NonNull RecyclerView recyclerView, @NonNull RecyclerView.ViewHolder viewHolder, @NonNull RecyclerView.ViewHolder target) {
-        return false;
+        int posicaoInicial = viewHolder.getAdapterPosition();
+        int posicaoFinal = target.getAdapterPosition();
+        trocaNotas(posicaoInicial, posicaoFinal);
+        return true;
+    }
+
+    private void trocaNotas(int posicaoInicial, int posicaoFinal) {
+        new NotaDAO().troca(posicaoInicial, posicaoFinal);
+        adapter.troca(posicaoInicial, posicaoFinal);
     }
 
     // quando o movimento for de deslize este metodo sera chamado
     @Override
     public void onSwiped(@NonNull RecyclerView.ViewHolder viewHolder, int direction) {
         int posicaoDaNotaDeslizada = viewHolder.getAdapterPosition();
-        new NotaDAO().remove(posicaoDaNotaDeslizada);
-        adapter.remove(posicaoDaNotaDeslizada);
+        removeNota(posicaoDaNotaDeslizada);
+    }
+
+    private void removeNota(int posicao) {
+        new NotaDAO().remove(posicao);
+        adapter.remove(posicao);
     }
 }

@@ -3,7 +3,8 @@ package br.luizfilipe.ceepapp.ui.activity;
 import static br.luizfilipe.ceepapp.ui.activity.Constantes.CHAVE_NOTA;
 import static br.luizfilipe.ceepapp.ui.activity.Constantes.CHAVE_POSICAO;
 import static br.luizfilipe.ceepapp.ui.activity.Constantes.POSICAO_INVALIDA;
-import static br.luizfilipe.ceepapp.ui.activity.Constantes.TITULO_APPBAR_FORMULARIO_NOTAS_ACTIVITY;
+import static br.luizfilipe.ceepapp.ui.activity.Constantes.TITULO_APPBAR_ALTERA_NOTA;
+import static br.luizfilipe.ceepapp.ui.activity.Constantes.TITULO_APPBAR_INSERE;
 
 import android.app.Activity;
 import android.content.Intent;
@@ -19,7 +20,6 @@ import br.luizfilipe.ceepapp.R;
 import br.luizfilipe.ceepapp.model.Nota;
 
 public class FormularioNotaActivity extends AppCompatActivity {
-
     // Por padrao o java inicializa 0, no caso com uma posiçao valida, por isso devemos inicializar com um
     // numero que referencia uma posicao invalida
     private int posicaoRecebida = POSICAO_INVALIDA;
@@ -30,12 +30,13 @@ public class FormularioNotaActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_formulario_nota);
-        setTitle(TITULO_APPBAR_FORMULARIO_NOTAS_ACTIVITY);
+        setTitle(TITULO_APPBAR_INSERE);
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         inicializaCampos();
 
         Intent dados = getIntent();
         if (dados.hasExtra(CHAVE_NOTA)) {
+            setTitle(TITULO_APPBAR_ALTERA_NOTA);
             Nota nota = (Nota) dados.getSerializableExtra(CHAVE_NOTA);
             posicaoRecebida = dados.getIntExtra(CHAVE_POSICAO, POSICAO_INVALIDA);
             preencheCampos(nota);

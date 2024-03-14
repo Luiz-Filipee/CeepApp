@@ -18,6 +18,8 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
+
 import java.util.List;
 
 import br.luizfilipe.ceepapp.R;
@@ -29,21 +31,28 @@ import br.luizfilipe.ceepapp.ui.recyclerview.helper.callback.NotaItemTouchHelper
 
 public class ListaNotasActivity extends AppCompatActivity {
     private ListaNotasAdapter adapter;
-
+    private static final String CHAVE_CONTADOR = "contador";
+    private int contador = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_lista_notas);
+
         setTitle(TITULO_APPBAR_LISTA_NOTAS_ACTIVITY);
+
+
         List<Nota> todasNotas = pegaTodasNotas();
         configuraRecyclerView(todasNotas);
         condifuraBotaoInsereNota();
+
     }
+
 
     private void condifuraBotaoInsereNota() {
         TextView botaoInsereNota = findViewById(R.id.lista_notas_insere_nota);
-        botaoInsereNota.setOnClickListener(v -> {
+        FloatingActionButton botaoInsere = findViewById(R.id.lista_notas_botao_insere);
+        botaoInsere.setOnClickListener(v -> {
             vaiParaFormularioNotaActivityInsere();
         });
     }
@@ -56,9 +65,6 @@ public class ListaNotasActivity extends AppCompatActivity {
 
     private static List<Nota> pegaTodasNotas() {
         NotaDAO dao = new NotaDAO();
-        for (int i = 0; i < 3; i++) {
-            dao.insere(new Nota("Titulo" + (i + 1), "Descrição" + (i + 1)));
-        }
         return dao.todos();
     }
 
@@ -76,9 +82,6 @@ public class ListaNotasActivity extends AppCompatActivity {
                 int posicaoRecebida = data.getIntExtra(CHAVE_POSICAO, POSICAO_INVALIDA);
                 if (ehPosicaoValida(posicaoRecebida)) {
                     altera(notaRecebida, posicaoRecebida);
-                } else {
-                    Toast.makeText(this, "Ocorreu um problema na alteração da nota. Tente novamente"
-                            , Toast.LENGTH_SHORT).show();
                 }
             }
         }
@@ -114,7 +117,7 @@ public class ListaNotasActivity extends AppCompatActivity {
     }
 
     private static boolean temNota(@Nullable Intent data) {
-        return data.hasExtra(CHAVE_NOTA);
+        return data != null && data.hasExtra(CHAVE_NOTA);
     }
 
     private static boolean resultadoOk(int resultCode) {
@@ -129,7 +132,11 @@ public class ListaNotasActivity extends AppCompatActivity {
     private void configuraRecyclerView(List<Nota> todasNotas) {
         RecyclerView listaNotas = findViewById(R.id.lista_notas_recyclerview);
         configuraAdapter(todasNotas, listaNotas);
-        ItemTouchHelper itemTouchHelper = new ItemTouchHelper(new NotaItemTouchHelperCallback());
+        configuraItemTouchHelper(listaNotas);
+    }
+
+    private void configuraItemTouchHelper(RecyclerView listaNotas) {
+        ItemTouchHelper itemTouchHelper = new ItemTouchHelper(new NotaItemTouchHelperCallback(adapter));
         itemTouchHelper.attachToRecyclerView(listaNotas); // anexa os comportamentos ao recyclerView
     }
 

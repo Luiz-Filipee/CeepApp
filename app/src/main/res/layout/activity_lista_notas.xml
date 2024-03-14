@@ -17,13 +17,25 @@
         app:layout_constraintTop_toTopOf="parent"
         tools:listitem="@layout/item_nota" />
 
-    <View android:id="@+id/lista_notas_fundo_gradiente_inferior"
+    <View
+        android:id="@+id/lista_notas_fundo_gradiente_inferior"
         android:layout_width="0dp"
         android:layout_height="5dp"
         android:background="@drawable/fundo_gradiente_insere_nota"
         app:layout_constraintBottom_toTopOf="@id/lista_notas_insere_nota"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent" />
+
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/lista_notas_botao_insere"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_margin="25dp"
+        android:src="@drawable/ic_action_insere_nota"
+        app:backgroundTint="@android:color/holo_orange_dark"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:rippleColor="#00B33B3B" />
 
     <TextView
         android:id="@+id/lista_notas_insere_nota"

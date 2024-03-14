@@ -1,26 +1,31 @@
 package br.luizfilipe.ceepapp.ui.activity;
 
 import static br.luizfilipe.ceepapp.ui.activity.Constantes.CHAVE_NOTA;
+import static br.luizfilipe.ceepapp.ui.activity.Constantes.CHAVE_POSICAO;
+import static br.luizfilipe.ceepapp.ui.activity.Constantes.CODIGO_REQUISICAO_ALTERA_NOTA;
 import static br.luizfilipe.ceepapp.ui.activity.Constantes.CODIGO_REQUISICAO_INSERE_NOTA;
-import static br.luizfilipe.ceepapp.ui.activity.Constantes.CODIGO_RESULTADO_NOTA_CRIADA;
+import static br.luizfilipe.ceepapp.ui.activity.Constantes.POSICAO_INVALIDA;
 import static br.luizfilipe.ceepapp.ui.activity.Constantes.TITULO_APPBAR_LISTA_NOTAS_ACTIVITY;
 
+import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
-import android.view.View;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.RecyclerView;
 
-import java.io.Serializable;
 import java.util.List;
 
 import br.luizfilipe.ceepapp.R;
 import br.luizfilipe.ceepapp.dao.NotaDAO;
 import br.luizfilipe.ceepapp.model.Nota;
 import br.luizfilipe.ceepapp.ui.recyclerview.adapter.ListaNotasAdapter;
+import br.luizfilipe.ceepapp.ui.recyclerview.adapter.listener.OnItemClickListener;
+import br.luizfilipe.ceepapp.ui.recyclerview.helper.callback.NotaItemTouchHelperCallback;
 
 public class ListaNotasActivity extends AppCompatActivity {
     private ListaNotasAdapter adapter;
@@ -39,11 +44,11 @@ public class ListaNotasActivity extends AppCompatActivity {
     private void condifuraBotaoInsereNota() {
         TextView botaoInsereNota = findViewById(R.id.lista_notas_insere_nota);
         botaoInsereNota.setOnClickListener(v -> {
-            abreFormularioNotaActivity();
+            vaiParaFormularioNotaActivityInsere();
         });
     }
 
-    private void abreFormularioNotaActivity() {
+    private void vaiParaFormularioNotaActivityInsere() {
         Intent intent =
                 new Intent(ListaNotasActivity.this, FormularioNotaActivity.class);
         startActivityForResult(intent, CODIGO_REQUISICAO_INSERE_NOTA);
@@ -51,18 +56,51 @@ public class ListaNotasActivity extends AppCompatActivity {
 
     private static List<Nota> pegaTodasNotas() {
         NotaDAO dao = new NotaDAO();
-        List<Nota> todasNotas;
-        todasNotas = dao.todos();
-        return todasNotas;
+        for (int i = 0; i < 3; i++) {
+            dao.insere(new Nota("Titulo" + (i + 1), "Descrição" + (i + 1)));
+        }
+        return dao.todos();
     }
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
-        if (ehResultadoComNota(requestCode, resultCode, data)){
-            Nota notaRecebida = (Nota) data.getSerializableExtra(CHAVE_NOTA);
-            adiciona(notaRecebida);
+        if (ehResultadoInsereNota(requestCode, data)) {
+            if (resultadoOk(resultCode)) {
+                Nota notaRecebida = (Nota) data.getSerializableExtra(CHAVE_NOTA);
+                adiciona(notaRecebida);
+            }
+        }
+        if (ehResultadoAlteraNota(requestCode, data)) {
+            if (resultadoOk(resultCode)) {
+                Nota notaRecebida = (Nota) data.getSerializableExtra(CHAVE_NOTA);
+                int posicaoRecebida = data.getIntExtra(CHAVE_POSICAO, POSICAO_INVALIDA);
+                if (ehPosicaoValida(posicaoRecebida)) {
+                    altera(notaRecebida, posicaoRecebida);
+                } else {
+                    Toast.makeText(this, "Ocorreu um problema na alteração da nota. Tente novamente"
+                            , Toast.LENGTH_SHORT).show();
+                }
+            }
         }
         super.onActivityResult(requestCode, resultCode, data);
+    }
+
+    private static boolean ehPosicaoValida(int posicaoRecebida) {
+        return posicaoRecebida > POSICAO_INVALIDA;
+    }
+
+    private void altera(Nota nota, int posicao) {
+        new NotaDAO().altera(posicao, nota);
+        adapter.altera(posicao, nota);
+    }
+
+    private static boolean ehResultadoAlteraNota(int requestCode, @Nullable Intent data) {
+        return ehCodigoRequisicaoAlteraNota(requestCode)
+                && temNota(data);
+    }
+
+    private static boolean ehCodigoRequisicaoAlteraNota(int requestCode) {
+        return requestCode == CODIGO_REQUISICAO_ALTERA_NOTA;
     }
 
     private void adiciona(Nota nota) {
@@ -70,16 +108,17 @@ public class ListaNotasActivity extends AppCompatActivity {
         adapter.adiciona(nota);
     }
 
-    private static boolean ehResultadoComNota(int requestCode, int resultCode, @Nullable Intent data) {
-        return ehCodigoRequisicaoInsereNota(requestCode) && ehCodigoRequestInsereNota(resultCode) && temNota(data);
+
+    private static boolean ehResultadoInsereNota(int requestCode, @Nullable Intent data) {
+        return ehCodigoRequisicaoInsereNota(requestCode) && temNota(data);
     }
 
     private static boolean temNota(@Nullable Intent data) {
         return data.hasExtra(CHAVE_NOTA);
     }
 
-    private static boolean ehCodigoRequestInsereNota(int resultCode) {
-        return resultCode == CODIGO_RESULTADO_NOTA_CRIADA;
+    private static boolean resultadoOk(int resultCode) {
+        return resultCode == Activity.RESULT_OK;
     }
 
     private static boolean ehCodigoRequisicaoInsereNota(int requestCode) {
@@ -90,11 +129,27 @@ public class ListaNotasActivity extends AppCompatActivity {
     private void configuraRecyclerView(List<Nota> todasNotas) {
         RecyclerView listaNotas = findViewById(R.id.lista_notas_recyclerview);
         configuraAdapter(todasNotas, listaNotas);
+        ItemTouchHelper itemTouchHelper = new ItemTouchHelper(new NotaItemTouchHelperCallback());
+        itemTouchHelper.attachToRecyclerView(listaNotas); // anexa os comportamentos ao recyclerView
     }
 
     private void configuraAdapter(List<Nota> todasNotas, RecyclerView listaNotas) {
         adapter = new ListaNotasAdapter(this, todasNotas);
         listaNotas.setAdapter(adapter);
+        adapter.setOnItemClickListener(new OnItemClickListener() {
+            @Override
+            public void onItemClick(Nota nota, int posicao) {
+                vaiParaFormularioNotaActivityAltera(nota, posicao);
+            }
+        });
+    }
+
+    private void vaiParaFormularioNotaActivityAltera(Nota nota, int posicao) {
+        Intent abreFormularioComNota = new Intent(ListaNotasActivity.this,
+                FormularioNotaActivity.class);
+        abreFormularioComNota.putExtra(CHAVE_NOTA, nota);
+        abreFormularioComNota.putExtra(CHAVE_POSICAO, posicao);
+        startActivityForResult(abreFormularioComNota, CODIGO_REQUISICAO_ALTERA_NOTA);
     }
 
 }
